@@ -1,0 +1,3 @@
+# Leitura e triangulação de STEP (OpenCascade). Instale com: pip install -r tools/cad/requirements.txt
+cadquery-ocp==8.0.1.1.0
+numpy>=1.26

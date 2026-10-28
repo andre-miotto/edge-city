@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Edge City · Solução Linha 1</title>
+    <meta
+      name="description"
+      content="Edge City: fábrica 3D interativa da Solução Linha 1 com WEGnology Edge Suite (WES), robôs, logística WMR e assistente de IA via MCP."
+    />
+  </head>
+  <body>
+    <div id="app">
+      <canvas
+        id="gl"
+        tabindex="0"
+        aria-label="Edge City, fábrica 3D da Solução Linha 1: células robotizadas, motor monitorado, esteira, CLP, tela do WES e tela da IA"
+      ></canvas>
+      <div class="hud brand">
+        <img id="brandIcon" alt="WES" />
+        <div><b>Edge City</b><span>Solução Linha 1 · WEGnology Edge Suite</span></div>
+      </div>
+      <div class="hud help">
+        <span class="keys"
+          >Arraste para olhar · <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> ou setas para andar ·
+          <kbd>Shift</kbd> corre<br /></span
+        ><span class="note"
+          >Valores e equipamentos ilustrativos. Só o sensor <b>TT-01</b> (ciano) alimenta os dados do WES; os demais
+          sensores, robôs móveis e operadores são demonstrativos. Clique num WMR para ver a tarefa.</span
+        >
+      </div>
+      <div class="hud pad" id="pad" aria-label="Controles de movimento">
+        <button class="up" data-k="f" aria-label="Andar para frente">▲</button>
+        <button class="left" data-k="l" aria-label="Andar para a esquerda">◀</button>
+        <button class="down" data-k="b" aria-label="Andar para trás">▼</button>
+        <button class="right" data-k="r" aria-label="Andar para a direita">▶</button>
+      </div>
+      <div class="hud wmr" id="wmr" aria-live="polite">
+        <header><b id="wmrId">WMR</b><button id="wmrClose" aria-label="Fechar painel do robô">Fechar</button></header>
+        <span class="chip" id="wmrState"></span>
+        <dl>
+          <dt>Origem</dt>
+          <dd id="wmrFrom"></dd>
+          <dt>Destino</dt>
+          <dd id="wmrTo"></dd>
+          <dt>Material</dt>
+          <dd id="wmrMat"></dd>
+          <dt>Próxima</dt>
+          <dd id="wmrNext"></dd>
+          <dt>Bateria</dt>
+          <dd id="wmrBat"></dd>
+        </dl>
+        <div class="bar"><i id="wmrBar"></i></div>
+        <small id="wmrProg" style="color: var(--muted); font-size: 12px"></small>
+        <small class="note"
+          >Simulação ilustrativa da logística. Não está integrada ao WMR Fleet Management nem envia dados ao WES.</small
+        >
+      </div>
+      <div class="hud actions">
+        <div class="poi" id="poi" role="menu" aria-label="Áreas da fábrica"></div>
+        <div class="status" id="cell" aria-live="polite"><strong>Célula 01 em operação</strong> · ciclo de 16 s</div>
+        <div class="status" id="status" aria-live="polite">
+          <strong>IA pronta</strong> · perguntas automáticas ligadas
+        </div>
+        <div class="row">
+          <button id="bAsk" class="primary">Perguntar à IA</button>
+          <button id="bAuto" aria-pressed="true">Automático</button>
+        </div>
+        <div class="row">
+          <button id="bTour" aria-pressed="false">Visita guiada</button>
+          <button id="bHome">Voltar ao início</button>
+        </div>
+        <div class="row">
+          <button id="bAreas" aria-expanded="false" aria-controls="poi">Áreas</button>
+          <button id="bPause" aria-pressed="false">Pausar célula</button>
+        </div>
+      </div>
+      <div class="hud cap" id="cap" aria-live="polite"><small id="capN">Visita guiada</small><b id="capT"></b></div>
+      <div id="loading">Montando Edge City…</div>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

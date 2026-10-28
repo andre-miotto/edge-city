@@ -1,0 +1,13 @@
+node_modules/
+dist/
+tests/output/
+.DS_Store
+Thumbs.db
+*.log
+.vite/
+
+# CAD: arquivos-fonte (STEP, dezenas de MB) e intermediários ficam fora do Git.
+# Os modelos otimizados em src/assets/models/ entram no Git. Veja tools/cad/README.md.
+tools/cad/source/
+tools/cad/.cache/
+__pycache__/

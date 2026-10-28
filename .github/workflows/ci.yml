@@ -1,0 +1,41 @@
+# Integração contínua: roda a cada push e pull request.
+# Tipos, lint e testes unitários são rápidos; os testes da cena usam Chromium com renderização por software.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Tipos, lint e testes unitários
+        run: npm run check
+      - name: Build
+        run: npm run build
+      - name: Navegador dos testes
+        run: npx playwright install --with-deps chromium
+      - name: Cena (carga, rotas dos WMR, câmera)
+        run: node tests/run-all.mjs
+      - name: Visual (comparação com tests/baseline)
+        run: npm run test:visual
+      - name: Capturas e diferenças
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: capturas
+          path: tests/output/
+          if-no-files-found: ignore
+      - name: Build (arquivo único)
+        uses: actions/upload-artifact@v4
+        with:
+          name: edge-city
+          path: dist/index.html

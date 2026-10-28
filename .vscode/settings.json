@@ -1,0 +1,9 @@
+{
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
+  "files.eol": "\n",
+  "eslint.useFlatConfig": true,
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "search.exclude": { "dist": true, "tests/output": true, "tests/baseline": true, "tools/cad/.cache": true },
+  "files.exclude": { "**/__pycache__": true }
+}
