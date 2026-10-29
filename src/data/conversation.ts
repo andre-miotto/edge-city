@@ -69,11 +69,19 @@ export function createConversation(ctx: AfterFlows) {
     return { items: items, scroll: sc };
   }
   // ---- atualização por quadro: chips da consulta MCP, anéis nos módulos do WES, status e desenho da conversa
-  const { chipReq, chipBack, toolChips, retChips, rings, curveM, toW, plen, ppt, chatCv, as } = ctx;
+  const { chipReq, chipBack, toolChips, retChips, rings, curveM, toW, plen, ppt, chatCv, as, camera } = ctx;
   const tmp = new THREE.Vector3();
+  // A tela da IA é um canvas grande: redesenhar e enviar à GPU (com mipmaps) custa caro e só vale se ela está à vista.
+  const view = new THREE.Frustum(),
+    pv = new THREE.Matrix4();
+  const CHAT_HZ = 15;
   /** Chip de retorno de cada ferramenta MCP. */
   const RET_CHIP: Record<string, string> = { tag: 'valor da tag', hist: 'histórico', alarm: 'alarmes' };
   let lastChat = -1;
+  function inView() {
+    pv.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
+    return view.setFromProjectionMatrix(pv).intersectsObject(as.m);
+  }
   function updateConversation(t: number) {
     const ct = conv.active ? t - conv.t0 : -1;
     const ringA: Record<string, number> = { telas: 0, alarm: 0, disp: 0, tag: 0, hist: 0, mcp: 0 };
@@ -145,8 +153,9 @@ export function createConversation(ctx: AfterFlows) {
       }
     }
     Object.keys(rings).forEach((k) => rings[k].userData.set(0.85 * (ringA[k] || 0)));
-    // desenha a conversa (até ~30 vezes por segundo)
-    if (t - lastChat > 1 / 30) {
+    // desenha a conversa (até CHAT_HZ vezes por segundo, e só com a tela no campo de visão: o estado vem de `t`,
+    // então ao voltar a olhar para ela o próximo quadro já mostra o ponto certo)
+    if (t - lastChat > 1 / CHAT_HZ && inView()) {
       const lay = itemsAt(t);
       st.items = lay.items;
       st.scroll = lay.scroll;

@@ -5,7 +5,7 @@ import type { BaseCtx } from '../ctx';
 export function createStage(ctx: BaseCtx) {
   const { canvas } = ctx;
   const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   // Neutral (Khronos PBR Neutral): mantém o azul WEG e o branco sem o desvio de matiz do ACES.
   renderer.toneMapping = THREE.NeutralToneMapping;

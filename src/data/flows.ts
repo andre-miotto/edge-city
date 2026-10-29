@@ -12,7 +12,7 @@ export function buildFlows(ctx: AfterScreens) {
   const cableMat = new THREE.MeshStandardMaterial({
     color: 0x72add1,
     emissive: 0x4083aa,
-    emissiveIntensity: 0.6,
+    emissiveIntensity: 0.22,
     metalness: 0.3,
     roughness: 0.5,
   });
@@ -67,11 +67,13 @@ export function buildFlows(ctx: AfterScreens) {
   ).forEach((c) => mesh(new THREE.TubeGeometry(c[0], c[2], c[1], 10, false), cableMat, 0, 0, 0));
   // ---------------- pulsos e brilho
   const gTex = glowTex();
+  /** Tom dos brilhos aditivos: ciano contido, em vez de branco puro (que estoura sobre o fundo claro). */
+  const GLOW = 0x6fb3d4;
   function pulse(sz) {
     const s = new THREE.Sprite(
       new THREE.SpriteMaterial({
         map: gTex,
-        color: 0xffffff,
+        color: GLOW,
         transparent: true,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
@@ -81,12 +83,18 @@ export function buildFlows(ctx: AfterScreens) {
     scene.add(s);
     return s;
   }
-  const pS = [0, 1, 2, 3, 4, 5, 6, 7].map(() => pulse(0.8)),
-    pC = [0, 1, 2, 3, 4, 5, 6].map(() => pulse(1.0));
+  const pS = [0, 1, 2, 3, 4, 5, 6, 7].map(() => pulse(0.5)),
+    pC = [0, 1, 2, 3, 4, 5, 6].map(() => pulse(0.65));
   // sobreposições na tela do WES
   const ovGlow = (sz) => {
     const s = new THREE.Sprite(
-      new THREE.SpriteMaterial({ map: gTex, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }),
+      new THREE.SpriteMaterial({
+        map: gTex,
+        color: GLOW,
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+      }),
     );
     s.scale.set(sz, sz, 1);
     wes.add(s);

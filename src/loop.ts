@@ -12,7 +12,8 @@ export function startLoop(ctx: AfterDrive) {
   const { updateFlows, updateConversation, drive } = ctx;
   let prev = performance.now(),
     lastClp = -1,
-    frameNo = 0;
+    lastShadow = -Infinity;
+  const SHADOW_EVERY = 66; // ms entre atualizações do mapa de sombras
   // ?freeze=<segundos>: tempo parado num instante fixo (capturas determinísticas dos testes visuais)
   const freeze = Number(new URLSearchParams(location.search).get('freeze'));
   if (freeze > 0) {
@@ -71,8 +72,13 @@ export function startLoop(ctx: AfterDrive) {
     updateConversation(t);
 
     // O mapa de sombras cobre o galpão todo e é o item mais caro do quadro. As sombras dependem só da luz e dos objetos
-    // (não da câmera), então atualizá-las em quadros alternados corta esse custo pela metade, sem diferença visível.
-    renderer.shadowMap.needsUpdate = frameNo++ % 2 === 0;
+    // (não da câmera) e o que se move é lento (WMR, pessoas, empilhadeira), então elas são atualizadas por tempo
+    // (~15 Hz) e não por quadro: o custo cai com a mesma proporção em qualquer taxa de quadros. Com o tempo parado
+    // (?freeze) atualiza sempre, para as capturas dos testes.
+    if (time.fixed || now - lastShadow >= SHADOW_EVERY) {
+      renderer.shadowMap.needsUpdate = true;
+      lastShadow = now;
+    }
     renderer.render(scene, camera);
     requestAnimationFrame(frame);
   }

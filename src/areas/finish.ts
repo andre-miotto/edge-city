@@ -10,16 +10,16 @@ export function finishAreas(ctx: AfterSupport) {
   inst(binGeo, binMat, L.bin, false);
   inst(UG.plane, lblMat, L.lbl, false);
   inst(palGeo, MP.pallet, L.pal, false);
-  inst(UG.box, MP.wood, L.crate, true);
+  inst(UG.box, MP.wood, L.crate, false);
   inst(gitFrame, MP.steelD, L.git, true);
   inst(UG.box, meshMat, L.gitM, false);
-  inst(UG.box, std(0xd8c2a3, 0.85, 0), L.wrapIn, true);
+  inst(UG.box, std(0xd8c2a3, 0.85, 0), L.wrapIn, false);
   inst(UG.box, std(0xf4f7fb, 0.2, 0, { transparent: true, opacity: 0.42, depthWrite: false }), L.wrap, false);
-  inst(ucyl(24), std(0xddb37c, 0.32, 0.9), L.spool, true);
-  inst(ucyl(24), MP.steelD, L.spoolF, true);
-  inst(ucyl(28), std(0x88b0ce, 0.5, 0.4), L.shield, true);
+  inst(ucyl(24), std(0xddb37c, 0.32, 0.9), L.spool, false);
+  inst(ucyl(24), MP.steelD, L.spoolF, false);
+  inst(ucyl(28), std(0x88b0ce, 0.5, 0.4), L.shield, false);
   inst(K.finG, M.blue, L.frame, false);
-  inst(ucyl(12), M.steel, L.shaft, true);
+  inst(ucyl(12), M.steel, L.shaft, false);
   A.build(scene, true, true);
   mk2.build(scene, false, true);
   // iluminação de destaque por setor (sem sombras)
