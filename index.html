@@ -20,15 +20,6 @@
         <img id="brandIcon" alt="WES" />
         <div><b>Edge City</b><span>Solução Linha 1 · WEGnology Edge Suite</span></div>
       </div>
-      <div class="hud help">
-        <span class="keys"
-          >Arraste para olhar · <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> ou setas para andar ·
-          <kbd>Shift</kbd> corre · <kbd>E</kbd> perto da empilhadeira dirige<br /></span
-        ><span class="note"
-          >Valores e equipamentos ilustrativos. Só o sensor <b>TT-01</b> (ciano) alimenta os dados do WES; os demais
-          sensores, robôs móveis e operadores são demonstrativos. Clique num WMR para ver a tarefa.</span
-        >
-      </div>
       <div class="hud pad" id="pad" aria-label="Controles de movimento">
         <button class="up" data-k="f" aria-label="Andar para frente">▲</button>
         <button class="left" data-k="l" aria-label="Andar para a esquerda">◀</button>
@@ -63,23 +54,38 @@
         >
       </div>
       <div class="hud actions">
-        <div class="poi" id="poi" role="menu" aria-label="Áreas da fábrica"></div>
-        <div class="status" id="cell" aria-live="polite"><strong>Célula 01 em operação</strong> · ciclo de 16 s</div>
-        <div class="status" id="status" aria-live="polite">
-          <strong>IA pronta</strong> · perguntas automáticas ligadas
+        <button id="bAsk" class="primary">Perguntar à IA</button>
+        <button id="bTour" aria-pressed="false">Visita guiada</button>
+      </div>
+      <div class="hud menu" id="menu">
+        <div class="panel" id="menuPanel" role="menu" aria-label="Menu">
+          <section>
+            <button id="bAreas" class="item" aria-expanded="false" aria-controls="poi">Áreas da fábrica</button>
+            <div class="poi" id="poi" role="menu" aria-label="Áreas da fábrica"></div>
+            <button id="bHome" class="item">Voltar ao início</button>
+            <button id="bPause" class="item" aria-pressed="false">Pausar célula</button>
+            <button id="bAuto" class="item" aria-pressed="true">Perguntas automáticas</button>
+          </section>
+          <section>
+            <div class="status" id="cell" aria-live="polite"><strong>Célula 01 em operação</strong> · ciclo de 16 s</div>
+            <div class="status" id="status" aria-live="polite">
+              <strong>IA pronta</strong> · perguntas automáticas ligadas
+            </div>
+          </section>
+          <section class="tips">
+            <span class="keys"
+              >Arraste para olhar · <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> ou setas para andar ·
+              <kbd>Shift</kbd> corre · <kbd>E</kbd> perto da empilhadeira dirige<br
+            /></span>
+            <span class="note"
+              >Valores e equipamentos ilustrativos. Só o sensor <b>TT-01</b> (ciano) alimenta os dados do WES; os demais
+              sensores, robôs móveis e operadores são demonstrativos. Clique num WMR para ver a tarefa.</span
+            >
+          </section>
         </div>
-        <div class="row">
-          <button id="bAsk" class="primary">Perguntar à IA</button>
-          <button id="bAuto" aria-pressed="true">Automático</button>
-        </div>
-        <div class="row">
-          <button id="bTour" aria-pressed="false">Visita guiada</button>
-          <button id="bHome">Voltar ao início</button>
-        </div>
-        <div class="row">
-          <button id="bAreas" aria-expanded="false" aria-controls="poi">Áreas</button>
-          <button id="bPause" aria-pressed="false">Pausar célula</button>
-        </div>
+        <button id="bMenu" class="burger" aria-expanded="false" aria-controls="menuPanel" aria-label="Menu">
+          <span></span><span></span><span></span>
+        </button>
       </div>
       <div class="hud cap" id="cap" aria-live="polite"><small id="capN">Visita guiada</small><b id="capT"></b></div>
       <div id="loading">Montando Edge City…</div>
