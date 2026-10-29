@@ -11,7 +11,8 @@ export function startLoop(ctx: AfterHud) {
   const { cell1, cell2, xRoll, XV2, AREAS, wmrPanel, fans, crane, trolley, HZ0, led, ttRing, clpCv, clpTex } = ctx;
   const { updateFlows, updateConversation } = ctx;
   let prev = performance.now(),
-    lastClp = -1;
+    lastClp = -1,
+    frameNo = 0;
   // ?freeze=<segundos>: tempo parado num instante fixo (capturas determinísticas dos testes visuais)
   const freeze = Number(new URLSearchParams(location.search).get('freeze'));
   if (freeze > 0) {
@@ -68,6 +69,9 @@ export function startLoop(ctx: AfterHud) {
     updateFlows(t);
     updateConversation(t);
 
+    // O mapa de sombras cobre o galpão todo e é o item mais caro do quadro. As sombras dependem só da luz e dos objetos
+    // (não da câmera), então atualizá-las em quadros alternados corta esse custo pela metade, sem diferença visível.
+    renderer.shadowMap.needsUpdate = frameNo++ % 2 === 0;
     renderer.render(scene, camera);
     requestAnimationFrame(frame);
   }

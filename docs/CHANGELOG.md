@@ -1,5 +1,14 @@
 # Histórico
 
+## Não lançado — Realismo visual do galpão (aguardando validação visual)
+
+- **Iluminação:** luzes, névoa e fundo neutros (sem o azul), tone mapping Neutral, luz principal com sombras cobrindo o galpão inteiro (mapa de 4096). Sombras atualizadas a cada 2 quadros.
+- **Ambiente de reflexos** capturado do próprio galpão depois da montagem (`scene/environment.ts`): metais e pintura refletem a cobertura, as luminárias e as paredes reais.
+- **Piso** (`scene/floorBake.ts`): mapa assado uma vez, com lajes, desgaste, poças de luz e sombra de contato sob equipamentos e pilares. Micro-relevo e rugosidade em textura repetida a cada 3 m.
+- **Arquitetura:** fechamento metálico envelhecido (`core/surfaces.ts`), cobertura clara, claraboias e vidro de fachada, chapa de base e enrijecedores nos pilares.
+- **Orçamento de desempenho:** chamadas de sombra de 550 para 650 (a passada cobre o galpão todo). Medido só em CPU (SwiftShader); sem medição de FPS em placa de vídeo.
+- **Pendente:** atualizar `tests/baseline/` depois de revisar as capturas (o teste visual falha de propósito até lá).
+
 ## 2.0.0 — Motor de desenvolvimento novo e motor W22 oficial
 
 - **Three.js r128 → r186, Vite 5 → 7.**

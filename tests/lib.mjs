@@ -1,10 +1,10 @@
 // Utilitários dos testes: abre o build (dist/index.html) no Chromium e expõe os ganchos de debug.js.
 import { chromium } from 'playwright';
-import { pathToFileURL } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 import fs from 'fs';
 import path from 'path';
 
-export const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
+export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 export const OUT = path.join(ROOT, 'tests', 'output');
 
 // Renderização por software (SwiftShader) funciona em máquinas sem GPU e em CI; em máquina com GPU também roda.

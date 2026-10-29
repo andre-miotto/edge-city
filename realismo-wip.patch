@@ -1,0 +1,588 @@
+diff --git a/src/core/surfaces.ts b/src/core/surfaces.ts
+new file mode 100644
+index 0000000..802d3b1
+--- /dev/null
++++ b/src/core/surfaces.ts
+@@ -0,0 +1,145 @@
++/**
++ * Superfícies de grande escala do galpão (canvas procedural): fechamento metálico, vidro de fachada e detalhe do concreto.
++ * São texturas grandes, usadas uma vez por superfície, para evitar a repetição visível de um padrão pequeno.
++ */
++import * as THREE from 'three';
++import { cvs, ctx2d } from './canvas2d';
++import { rng } from './math';
++
++/**
++ * Fechamento metálico trapezoidal, pintado em cinza-claro neutro, com envelhecimento vertical.
++ * A textura cobre 2,4 m na horizontal (8 nervuras) e toda a altura do painel; as juntas de chapa ficam a cada ~5 m.
++ */
++export function wallCladCanvas() {
++  const W = 2048,
++    H = 1024,
++    c = cvs(W, H),
++    g = ctx2d(c),
++    r = rng(11);
++  const base = '#c9caca';
++  g.fillStyle = base;
++  g.fillRect(0, 0, W, H);
++  const ribs = 32,
++    w = W / ribs;
++  for (let i = 0; i < ribs; i++) {
++    const x = i * w,
++      gr = g.createLinearGradient(x, 0, x + w, 0);
++    gr.addColorStop(0, '#9fa1a2');
++    gr.addColorStop(0.16, '#e3e4e4');
++    gr.addColorStop(0.36, base);
++    gr.addColorStop(0.86, base);
++    gr.addColorStop(1, '#b7b8b9');
++    g.fillStyle = gr;
++    g.fillRect(x, 0, w, H);
++    // pequena variação de tom entre chapas vizinhas
++    g.fillStyle = r() < 0.5 ? 'rgba(0,0,0,' + r() * 0.035 + ')' : 'rgba(255,255,255,' + r() * 0.035 + ')';
++    g.fillRect(x, 0, w, H);
++  }
++  // juntas horizontais entre fiadas de chapa
++  for (const y of [190, 450, 700, 960]) {
++    g.fillStyle = 'rgba(40,46,52,.22)';
++    g.fillRect(0, y, W, 2);
++    g.fillStyle = 'rgba(255,255,255,.18)';
++    g.fillRect(0, y + 2, W, 2);
++  }
++  // escorrimento de chuva e poeira
++  for (let i = 0; i < 320; i++) {
++    const x = r() * W,
++      y0 = r() * H * 0.7,
++      len = 90 + r() * 420,
++      wd = 1.5 + r() * 5;
++    const gr = g.createLinearGradient(0, y0, 0, y0 + len);
++    const a = 0.025 + r() * 0.05;
++    gr.addColorStop(0, 'rgba(70,64,58,0)');
++    gr.addColorStop(0.2, 'rgba(70,64,58,' + a + ')');
++    gr.addColorStop(1, 'rgba(70,64,58,0)');
++    g.fillStyle = gr;
++    g.fillRect(x, y0, wd, len);
++  }
++  // sujeira acumulada na base (a parede inferior de concreto cobre os primeiros 3,2 m)
++  const dirt = g.createLinearGradient(0, H, 0, H * 0.72);
++  dirt.addColorStop(0, 'rgba(64,60,56,.34)');
++  dirt.addColorStop(1, 'rgba(64,60,56,0)');
++  g.fillStyle = dirt;
++  g.fillRect(0, H * 0.72, W, H * 0.28);
++  // sombra sob a viga de beiral
++  const top = g.createLinearGradient(0, 0, 0, 90);
++  top.addColorStop(0, 'rgba(40,46,52,.22)');
++  top.addColorStop(1, 'rgba(40,46,52,0)');
++  g.fillStyle = top;
++  g.fillRect(0, 0, W, 90);
++  return c;
++}
++
++/** Vidro da fachada: reflete o céu (mais claro no alto), com leve esverdeado do vidro comum. */
++export function glazingCanvas() {
++  const c = cvs(16, 128),
++    g = ctx2d(c),
++    gr = g.createLinearGradient(0, 0, 0, 128);
++  gr.addColorStop(0, '#ebeeef');
++  gr.addColorStop(0.5, '#cfd9dc');
++  gr.addColorStop(1, '#a5b4ba');
++  g.fillStyle = gr;
++  g.fillRect(0, 0, 16, 128);
++  return c;
++}
++
++/** Cobertura metálica pintada de branco-gelo: rebate a luz das luminárias, como em galpões reais. */
++export function roofDeckCanvas() {
++  const c = cvs(512, 128),
++    g = ctx2d(c),
++    r = rng(23),
++    n = 8,
++    w = 512 / n;
++  g.fillStyle = '#dcdbd8';
++  g.fillRect(0, 0, 512, 128);
++  for (let i = 0; i < n; i++) {
++    const x = i * w,
++      gr = g.createLinearGradient(x, 0, x + w, 0);
++    gr.addColorStop(0, '#aeaca8');
++    gr.addColorStop(0.18, '#f1f0ee');
++    gr.addColorStop(0.4, '#dcdbd8');
++    gr.addColorStop(1, '#dcdbd8');
++    g.fillStyle = gr;
++    g.fillRect(x, 0, w, 128);
++    g.fillStyle = 'rgba(0,0,0,' + r() * 0.03 + ')';
++    g.fillRect(x, 0, w, 128);
++  }
++  return c;
++}
++
++/**
++ * Micro-relevo do concreto (cinza neutro, sem emenda visível): serve de bump e de variação de rugosidade do piso.
++ * Ruído fino colocado também nas bordas opostas, para a textura repetir sem costura.
++ */
++export function concreteDetailCanvas() {
++  const S = 512,
++    c = cvs(S, S),
++    g = ctx2d(c),
++    r = rng(31);
++  g.fillStyle = '#808080';
++  g.fillRect(0, 0, S, S);
++  for (let i = 0; i < 26000; i++) {
++    const v = r();
++    g.fillStyle = v < 0.5 ? 'rgba(0,0,0,.08)' : 'rgba(255,255,255,.07)';
++    const x = r() * S,
++      y = r() * S,
++      s = 1 + r() * 2.4;
++    for (const dx of [0, S, -S]) for (const dy of [0, S, -S]) if (x + dx < S + 4 && y + dy < S + 4) g.fillRect(x + dx, y + dy, s, s);
++  }
++  // pequenos poros
++  for (let i = 0; i < 700; i++) {
++    const x = r() * S,
++      y = r() * S,
++      rad = 0.8 + r() * 2.2;
++    g.fillStyle = 'rgba(0,0,0,.35)';
++    for (const dx of [0, S, -S]) for (const dy of [0, S, -S]) {
++      g.beginPath();
++      g.arc(x + dx, y + dy, rad, 0, Math.PI * 2);
++      g.fill();
++    }
++  }
++  const t = new THREE.CanvasTexture(c);
++  t.wrapS = t.wrapT = THREE.RepeatWrapping;
++  return t;
++}
+diff --git a/src/loop.ts b/src/loop.ts
+index 256fdb1..be64a0a 100644
+--- a/src/loop.ts
++++ b/src/loop.ts
+@@ -11,7 +11,8 @@ export function startLoop(ctx: AfterHud) {
+   const { cell1, cell2, xRoll, XV2, AREAS, wmrPanel, fans, crane, trolley, HZ0, led, ttRing, clpCv, clpTex } = ctx;
+   const { updateFlows, updateConversation } = ctx;
+   let prev = performance.now(),
+-    lastClp = -1;
++    lastClp = -1,
++    frameNo = 0;
+   // ?freeze=<segundos>: tempo parado num instante fixo (capturas determinísticas dos testes visuais)
+   const freeze = Number(new URLSearchParams(location.search).get('freeze'));
+   if (freeze > 0) {
+@@ -68,6 +69,9 @@ export function startLoop(ctx: AfterHud) {
+     updateFlows(t);
+     updateConversation(t);
+ 
++    // O mapa de sombras cobre o galpão todo e é o item mais caro do quadro. As sombras dependem só da luz e dos objetos
++    // (não da câmera), então atualizá-las em quadros alternados corta esse custo pela metade, sem diferença visível.
++    renderer.shadowMap.needsUpdate = frameNo++ % 2 === 0;
+     renderer.render(scene, camera);
+     requestAnimationFrame(frame);
+   }
+diff --git a/src/main.ts b/src/main.ts
+index 19a2f1d..1317c2c 100644
+--- a/src/main.ts
++++ b/src/main.ts
+@@ -38,6 +38,8 @@ import { createControls } from './ui/controls';
+ import { createTour } from './ui/tour';
+ import { createHud } from './ui/hud';
+ import { createWmrPanel } from './ui/wmrPanel';
++import { bakeFloor } from './scene/floorBake';
++import { bakeEnvironment } from './scene/environment';
+ import { startLoop } from './loop';
+ import { installDebugHooks } from './debug';
+ 
+@@ -86,6 +88,7 @@ async function boot() {
+   const life = buildAreaLife(fleet);
+   // 4. telas do WES e da IA, fluxos de dados e conversa
+   const screens = buildScreens(life);
++  bakeFloor(screens); // piso com sombra de contato: precisa de todos os colisores
+   const flows = buildFlows(screens);
+   const conversation = createConversation(flows);
+   // 5. interação e laço
+@@ -93,6 +96,7 @@ async function boot() {
+   const tour = createTour(controls);
+   const panel = createWmrPanel(tour);
+   const hud = createHud(panel);
++  bakeEnvironment(hud); // reflexos e luz indireta a partir do galpão montado
+   installDebugHooks(startLoop(hud));
+   el('loading')!.classList.add('done');
+ }
+diff --git a/src/scene/environment.ts b/src/scene/environment.ts
+new file mode 100644
+index 0000000..83efcd4
+--- /dev/null
++++ b/src/scene/environment.ts
+@@ -0,0 +1,20 @@
++/**
++ * Ambiente de reflexos e luz indireta gerado a partir do próprio galpão.
++ * Depois que a cena está montada, uma captura em cubo (feita uma vez, no meio do galpão) vira o mapa de ambiente.
++ * Os metais e a pintura passam a refletir a cobertura clara, as luminárias, as paredes e o piso reais, e a luz
++ * rebatida do ambiente acompanha as cores do galpão, em vez de um céu genérico.
++ */
++import * as THREE from 'three';
++import type { AfterHud } from '../ctx';
++
++export function bakeEnvironment(ctx: AfterHud) {
++  const { renderer, scene } = ctx;
++  renderer.shadowMap.needsUpdate = true; // as sombras entram na captura
++  const old = scene.environment;
++  const pm = new THREE.PMREMGenerator(renderer);
++  const rt = pm.fromScene(scene, 0.02, 0.2, 260, { size: 256, position: new THREE.Vector3(0, 8, 8) });
++  scene.environment = rt.texture;
++  pm.dispose();
++  if (old) old.dispose();
++  return ctx;
++}
+diff --git a/src/scene/floorBake.ts b/src/scene/floorBake.ts
+new file mode 100644
+index 0000000..a9106ce
+--- /dev/null
++++ b/src/scene/floorBake.ts
+@@ -0,0 +1,132 @@
++/**
++ * Mapa de cor do piso, assado uma vez na carga (não custa nada por quadro).
++ * Camadas: concreto em lajes com tom próprio, manchas e desgaste, poças de luz sob as luminárias, escurecimento junto
++ * às paredes e sombra de contato (oclusão) sob equipamentos e pilares.
++ * É o que quebra a repetição de uma textura pequena e "assenta" os objetos no chão.
++ */
++import * as THREE from 'three';
++import { cvs, ctx2d } from '../core/canvas2d';
++import { rng } from '../core/math';
++import type { Collider } from './materials';
++import type { AfterScreens } from '../ctx';
++
++// o piso é um plano de 140 × 110 m centrado em (0, 7): x de −70 a 70, z de −48 a 62
++const FX0 = -70,
++  FZ0 = -48,
++  FW = 140,
++  FH = 110,
++  PX = 22; // pixels por metro
++
++export function bakeFloor(ctx: AfterScreens) {
++  const { floor, colliders, columns, lamps, HX0, HX1, HZ0, HZ1, maxAniso } = ctx;
++  const W = FW * PX,
++    H = FH * PX,
++    c = cvs(W, H),
++    g = ctx2d(c),
++    r = rng(7);
++  const X = (x: number) => (x - FX0) * PX,
++    Z = (z: number) => (z - FZ0) * PX;
++
++  // 1. concreto base e lajes de 7,5 × 7,5 m, cada uma com um tom ligeiramente diferente
++  g.fillStyle = '#929394';
++  g.fillRect(0, 0, W, H);
++  const SL = 7.5;
++  for (let x = HX0; x < HX1; x += SL)
++    for (let z = HZ0; z < HZ1; z += SL) {
++      const v = (r() - 0.5) * 0.09;
++      g.fillStyle = v > 0 ? 'rgba(255,255,255,' + v + ')' : 'rgba(0,0,0,' + -v + ')';
++      g.fillRect(X(x), Z(z), SL * PX, SL * PX);
++    }
++  // juntas de dilatação
++  g.fillStyle = 'rgba(30,32,34,.3)';
++  for (let x = HX0; x <= HX1 + 0.01; x += SL) g.fillRect(X(x) - 1, Z(HZ0), 2, (HZ1 - HZ0) * PX);
++  for (let z = HZ0; z <= HZ1 + 0.01; z += SL) g.fillRect(X(HX0), Z(z) - 1, (HX1 - HX0) * PX, 2);
++
++  // 2. manchas amplas, desgaste e pequenas manchas de óleo
++  const blob = (x: number, y: number, rad: number, col: string) => {
++    const gr = g.createRadialGradient(x, y, 0, x, y, rad);
++    gr.addColorStop(0, col);
++    gr.addColorStop(1, 'rgba(0,0,0,0)');
++    g.fillStyle = gr;
++    g.fillRect(x - rad, y - rad, rad * 2, rad * 2);
++  };
++  for (let i = 0; i < 160; i++) {
++    const dark = r() < 0.55;
++    blob(r() * W, r() * H, (3 + r() * 11) * PX, dark ? 'rgba(20,22,24,' + (0.03 + r() * 0.05) + ')' : 'rgba(255,255,255,' + (0.025 + r() * 0.04) + ')');
++  }
++  for (let i = 0; i < 90; i++) blob(X(HX0 + r() * (HX1 - HX0)), Z(HZ0 + r() * (HZ1 - HZ0)), (0.25 + r() * 0.7) * PX, 'rgba(15,16,18,' + (0.18 + r() * 0.2) + ')');
++  // corredores de tráfego: concreto polido, mais claro e liso
++  g.fillStyle = 'rgba(255,255,255,.045)';
++  g.fillRect(X(HX0), Z(9), (HX1 - HX0) * PX, 4 * PX);
++  g.fillRect(X(2), Z(-41), 3 * PX, 50 * PX);
++
++  // 3. poças de luz sob as luminárias (iluminação geral distribuída, sem manchas fortes)
++  g.globalCompositeOperation = 'lighter';
++  lamps.forEach((l) => blob(X(l.x), Z(l.z), 13 * PX, 'rgba(255,250,240,.05)'));
++  g.globalCompositeOperation = 'source-over';
++
++  // 4. escurecimento junto às paredes (menos luz e mais poeira)
++  const edge = 4.5 * PX;
++  const wallGrad = (x0: number, y0: number, x1: number, y1: number, rx: number, ry: number, rw: number, rh: number) => {
++    const gr = g.createLinearGradient(x0, y0, x1, y1);
++    gr.addColorStop(0, 'rgba(18,20,22,.34)');
++    gr.addColorStop(1, 'rgba(18,20,22,0)');
++    g.fillStyle = gr;
++    g.fillRect(rx, ry, rw, rh);
++  };
++  const lx = X(HX0),
++    rx2 = X(HX1),
++    tz = Z(HZ0),
++    bz = Z(HZ1);
++  wallGrad(lx, 0, lx + edge, 0, lx, tz, edge, bz - tz);
++  wallGrad(rx2, 0, rx2 - edge, 0, rx2 - edge, tz, edge, bz - tz);
++  wallGrad(0, tz, 0, tz + edge, lx, tz, rx2 - lx, edge);
++  wallGrad(0, bz, 0, bz - edge, lx, bz - edge, rx2 - lx, edge);
++  // fora do galpão: escuro (não aparece, mas evita vazamento de luz no horizonte)
++  g.fillStyle = 'rgba(20,22,24,.7)';
++  g.fillRect(0, 0, lx, H);
++  g.fillRect(rx2, 0, W - rx2, H);
++  g.fillRect(0, 0, W, tz);
++  g.fillRect(0, bz, W, H - bz);
++
++  // 5. sombra de contato: pilares e equipamentos. Cada retângulo é desenhado fora da tela, só com a sombra suave
++  // (shadowBlur) dentro do mapa; duas passagens, uma larga e fraca e uma justa e escura junto ao objeto.
++  const OFF = 20000;
++  const shadowRect = (x0: number, z0: number, x1: number, z1: number, blurM: number, a: number, ang = 0, cx = 0, cz = 0) => {
++    g.save();
++    g.shadowColor = 'rgba(8,9,10,' + a + ')';
++    g.shadowBlur = blurM * PX;
++    g.shadowOffsetX = OFF;
++    g.fillStyle = '#000';
++    if (ang) {
++      g.translate(X(cx) - OFF, Z(cz));
++      g.rotate(ang);
++      g.fillRect(X(x0) - X(cx), Z(z0) - Z(cz), (x1 - x0) * PX, (z1 - z0) * PX);
++    } else {
++      g.fillRect(X(x0) - OFF, Z(z0), (x1 - x0) * PX, (z1 - z0) * PX);
++    }
++    g.restore();
++  };
++  const bounds = (b: Collider) => {
++    if ('hw' in b) return { x0: -b.hw, x1: b.hw, z0: -b.hd, z1: b.hd, ang: -b.ang, cx: b.cx, cz: b.cz };
++    return { x0: b.x0, x1: b.x1, z0: b.z0, z1: b.z1, ang: 0, cx: 0, cz: 0 };
++  };
++  colliders.forEach((b) => {
++    const q = bounds(b);
++    shadowRect(q.x0, q.z0, q.x1, q.z1, 2.2, 0.32, q.ang, q.cx, q.cz);
++    shadowRect(q.x0, q.z0, q.x1, q.z1, 0.5, 0.42, q.ang, q.cx, q.cz);
++  });
++  columns.forEach((p) => {
++    shadowRect(p.x - 0.55, p.z - 0.55, p.x + 0.55, p.z + 0.55, 1.2, 0.4);
++    shadowRect(p.x - 0.55, p.z - 0.55, p.x + 0.55, p.z + 0.55, 0.3, 0.45);
++  });
++
++  const t = new THREE.CanvasTexture(c);
++  t.colorSpace = THREE.SRGBColorSpace;
++  t.anisotropy = maxAniso;
++  const m = floor.material as THREE.MeshStandardMaterial;
++  m.map = t;
++  m.color.set(0xffffff);
++  m.needsUpdate = true;
++  return ctx;
++}
+diff --git a/src/scene/hall.ts b/src/scene/hall.ts
+index fa6470e..8516749 100644
+--- a/src/scene/hall.ts
++++ b/src/scene/hall.ts
+@@ -2,7 +2,8 @@
+ import * as THREE from 'three';
+ import { Builder, UG, std } from '../core/builder';
+ import { txt, ctx2d } from '../core/canvas2d';
+-import { concreteTex, ribTex, rtex, signTex, slatTex } from '../core/textures';
++import { rtex, signTex, slatTex } from '../core/textures';
++import { concreteDetailCanvas, glazingCanvas, roofDeckCanvas, wallCladCanvas } from '../core/surfaces';
+ import type { AfterMaterials } from '../ctx';
+ export function buildHall(ctx: AfterMaterials) {
+   const { MP, colliders, imgs, maxAniso, scene } = ctx;
+@@ -12,11 +13,18 @@ export function buildHall(ctx: AfterMaterials) {
+     HZ0 = -42,
+     HZ1 = 56,
+     HC = 24.8;
+-  const floorT = rtex(concreteTex(), 140 / 8, 110 / 8, maxAniso);
+-  const floor = new THREE.Mesh(
+-    new THREE.PlaneGeometry(140, 110),
+-    std(0xffffff, 0.62, 0.05, { map: floorT, envMapIntensity: 0.7 }),
+-  );
++  // Piso: o mapa de cor grande (lajes, desgaste, sombra de contato) é assado depois, em scene/floorBake.ts, quando
++  // os colisores já existem. Aqui ficam o micro-relevo e a rugosidade, que se repetem a cada 3 m.
++  const detail = concreteDetailCanvas();
++  detail.repeat.set(140 / 3, 110 / 3);
++  detail.anisotropy = maxAniso;
++  const floorMat = std(0xa3a5a6, 1.25, 0.0, {
++    bumpMap: detail,
++    bumpScale: 0.12,
++    roughnessMap: detail, // média 0,5 × 1,25 = rugosidade ~0,62 (concreto liso, não espelhado)
++    envMapIntensity: 0.5,
++  });
++  const floor = new THREE.Mesh(new THREE.PlaneGeometry(140, 110), floorMat);
+   floor.rotation.x = -Math.PI / 2;
+   floor.position.set(0, 0, 7);
+   floor.receiveShadow = true;
+@@ -100,7 +108,11 @@ export function buildHall(ctx: AfterMaterials) {
+   floorText('CENTRO DE MONITORAMENTO', 'WEGnology Edge Suite', 29, 5.0, 11);
+   floorText('ÁREA DE MANUTENÇÃO', null, -60, 27.6, 7.5);
+   // paredes: base de concreto, fechamento metálico e faixa de janelas
+-  const cladT = rtex(ribTex('#3a4d63', '#4f6580', '#2b3a4c', 4), 1, 1);
++  const cladT = rtex(wallCladCanvas(), 1, 1, maxAniso);
++  const glassTex = new THREE.CanvasTexture(glazingCanvas());
++  glassTex.colorSpace = THREE.SRGBColorSpace;
++  const glassM = new THREE.MeshBasicMaterial({ map: glassTex });
++  let wallSeed = 0;
+   function wall(x0, z0, x1, z1) {
+     const L = Math.hypot(x1 - x0, z1 - z0),
+       ang = Math.atan2(-(z1 - z0), x1 - x0),
+@@ -110,8 +122,9 @@ export function buildHall(ctx: AfterMaterials) {
+       nz = (x1 - x0) / L;
+     const t = cladT.clone();
+     t.needsUpdate = true;
+-    t.repeat.set(L / 1.2, 1);
+-    const cl = new THREE.Mesh(UG.plane, std(0xffffff, 0.55, 0.45, { map: t }));
++    t.repeat.set(L / 9.6, 1);
++    t.offset.x = (wallSeed++ * 0.37) % 1; // cada parede começa em um ponto diferente do padrão
++    const cl = new THREE.Mesh(UG.plane, std(0xffffff, 0.58, 0.3, { map: t }));
+     cl.scale.set(L, HC - 3.2, 1);
+     cl.position.set(cx, 3.2 + (HC - 3.2) / 2, cz);
+     cl.rotation.y = ang;
+@@ -119,7 +132,7 @@ export function buildHall(ctx: AfterMaterials) {
+     scene.add(cl);
+     const b = new Builder();
+     b.box(MP.panel, L, 3.2, 0.3, cx - nx * 0.15, 1.6, cz - nz * 0.15, 0, ang, 0);
+-    b.plane(MP.glow, L, 2.2, cx + nx * 0.03, 18.6, cz + nz * 0.03, 0, ang, 0);
++    b.plane(glassM, L, 2.2, cx + nx * 0.03, 18.6, cz + nz * 0.03, 0, ang, 0);
+     for (let s = 0; s <= L; s += 4)
+       b.box(
+         MP.struct,
+@@ -221,8 +234,14 @@ export function buildHall(ctx: AfterMaterials) {
+   const ST = new Builder(),
+     COL = new Builder();
+   const FX = [-66, -44, -22, 0, 22, 44, 66];
++  const columns: { x: number; z: number }[] = [];
+   function column(x, z, h) {
++    columns.push({ x, z });
+     COL.box(MP.panel, 1.1, 0.5, 1.1, x, 0.25, z);
++    COL.box(MP.steelD, 0.9, 0.04, 0.9, x, 0.52, z); // chapa de base
++    [-1, 1].forEach((sx) => [-1, 1].forEach((sz) => COL.cyl(MP.steel, 0.035, 0.07, x + sx * 0.38, 0.56, z + sz * 0.38, 0, 0, 0, 8)));
++    ST.box(MP.struct, 0.62, 0.7, 0.05, x, 0.88, z - 0.43); // enrijecedores da base
++    ST.box(MP.struct, 0.62, 0.7, 0.05, x, 0.88, z + 0.43);
+     ST.box(MP.struct, 0.7, h, 0.06, x, h / 2, z - 0.34);
+     ST.box(MP.struct, 0.7, h, 0.06, x, h / 2, z + 0.34);
+     ST.box(MP.struct, 0.06, h, 0.62, x, h / 2, z);
+@@ -293,21 +312,23 @@ export function buildHall(ctx: AfterMaterials) {
+   tray(-29.6, -5.0, 6.85, 3.5);
+   ST.build(scene, false, true);
+   // cobertura e luminárias
++  const lamps: { x: number; z: number }[] = [];
+   {
+-    const rt = rtex(ribTex('#18283a', '#22364c', '#111d2a', 6), HX1 - HX0, 1);
++    const rt = rtex(roofDeckCanvas(), (HX1 - HX0) / 2, 1, maxAniso);
+     rt.rotation = Math.PI / 2;
+-    const roof = new THREE.Mesh(UG.plane, std(0xffffff, 0.7, 0.4, { map: rt }));
++    const roof = new THREE.Mesh(UG.plane, std(0xffffff, 0.75, 0.15, { map: rt }));
+     roof.scale.set(HX1 - HX0, HZ1 - HZ0, 1);
+     roof.rotation.x = Math.PI / 2;
+     roof.position.set(0, HC, (HZ0 + HZ1) / 2);
+     scene.add(roof);
+     const b = new Builder();
+-    const sky = new THREE.MeshBasicMaterial({ color: 0x86a3bc });
++    const sky = new THREE.MeshBasicMaterial({ color: 0xdfe7ec });
+     [-30, -6, 18, 42].forEach((z) => b.plane(sky, HX1 - HX0, 3.0, 0, HC - 0.06, z, Math.PI / 2, 0, 0));
+-    const lamp = new THREE.MeshBasicMaterial({ color: 0xf9fbff }),
+-      hous = std(0x838f9b, 0.5, 0.5);
++    const lamp = new THREE.MeshBasicMaterial({ color: 0xfffdf8 }),
++      hous = std(0x8a9096, 0.5, 0.5);
+     [-55, -33, -11, 11, 33, 55].forEach((x) =>
+       [-30, -15, 0, 14, 28, 42].forEach((z) => {
++        lamps.push({ x, z });
+         b.box(hous, 2.8, 0.16, 0.56, x, 18.6, z);
+         b.plane(lamp, 2.6, 0.42, x, 18.51, z, Math.PI / 2, 0, 0);
+         [-1.1, 1.1].forEach((dx) => b.box(MP.steelD, 0.03, HC - 0.3 - 18.7, 0.03, x + dx, (18.7 + HC - 0.3) / 2, z));
+@@ -419,5 +440,22 @@ export function buildHall(ctx: AfterMaterials) {
+     m.position.set(-12, 13, HZ0 + 0.2);
+     scene.add(m);
+   }
+-  return Object.assign(ctx, { HC, HX0, HX1, HZ0, HZ1, door, fans, floorText, hangSign, lineM, mk, pipeM, rect });
++  return Object.assign(ctx, {
++    HC,
++    HX0,
++    HX1,
++    HZ0,
++    HZ1,
++    columns,
++    door,
++    fans,
++    floor,
++    floorText,
++    hangSign,
++    lamps,
++    lineM,
++    mk,
++    pipeM,
++    rect,
++  });
+ }
+diff --git a/src/scene/stage.ts b/src/scene/stage.ts
+index 66e7546..50e9c5f 100644
+--- a/src/scene/stage.ts
++++ b/src/scene/stage.ts
+@@ -7,14 +7,17 @@ export function createStage(ctx: BaseCtx) {
+   const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, powerPreference: 'high-performance' });
+   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+   renderer.outputColorSpace = THREE.SRGBColorSpace;
+-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+-  renderer.toneMappingExposure = 0.94;
++  // Neutral (Khronos PBR Neutral): mantém o azul WEG e o branco sem o desvio de matiz do ACES.
++  renderer.toneMapping = THREE.NeutralToneMapping;
++  renderer.toneMappingExposure = 0.92;
+   renderer.shadowMap.enabled = true;
++  renderer.shadowMap.autoUpdate = false; // atualizado em loop.ts, em quadros alternados
+   renderer.shadowMap.type = THREE.PCFShadowMap;
+   const maxAniso = renderer.capabilities.getMaxAnisotropy();
+   const scene = new THREE.Scene();
+-  scene.background = new THREE.Color(0x061528);
+-  scene.fog = new THREE.FogExp2(0x0a1c31, 0.0062); // névoa e fundo usam a cor de saída (sRGB) direto, sem conversão;
++  scene.background = new THREE.Color(0xbcbcb9);
++  // Névoa leve e neutra: a poeira de um galpão grande atenua as áreas distantes e dá profundidade.
++  scene.fog = new THREE.FogExp2(0xbcbcb9, 0.0032);
+   const camera = new THREE.PerspectiveCamera(62, 1, 0.12, 420);
+   camera.rotation.order = 'YXZ';
+   // ambiente para reflexos controlados nos metais (galpão estilizado: luminárias no teto, faixa de janelas)
+@@ -22,10 +25,10 @@ export function createStage(ctx: BaseCtx) {
+     const c = cvs(1024, 512),
+       g = ctx2d(c);
+     const gr = g.createLinearGradient(0, 0, 0, 512);
+-    gr.addColorStop(0, '#16263b');
+-    gr.addColorStop(0.42, '#33485f');
+-    gr.addColorStop(0.5, '#26364a');
+-    gr.addColorStop(1, '#0e141c');
++    gr.addColorStop(0, '#9aa3ab');
++    gr.addColorStop(0.42, '#c9cfd4');
++    gr.addColorStop(0.5, '#b4babf');
++    gr.addColorStop(1, '#5d6063');
+     g.fillStyle = gr;
+     g.fillRect(0, 0, 1024, 512);
+     for (let r = 0; r < 5; r++) {
+@@ -33,7 +36,7 @@ export function createStage(ctx: BaseCtx) {
+       const y = 26 + r * 34;
+       for (let k = 0; k < 18; k++) g.fillRect(k * 57 + 12, y, 30 - r * 3, 7 - r);
+     }
+-    g.fillStyle = 'rgba(110,160,215,.35)';
++    g.fillStyle = 'rgba(210,225,240,.35)';
+     g.fillRect(0, 196, 1024, 16);
+     const t = new THREE.CanvasTexture(c);
+     t.mapping = THREE.EquirectangularReflectionMapping;
+@@ -46,18 +49,20 @@ export function createStage(ctx: BaseCtx) {
+   // luzes — unidades físicas (padrão desde o r155).
+   // Pontuais e spots usam decay 0: luz de "artista", que só se apaga perto de `distance`. As intensidades foram
+   // calculadas na migração do r128 para manter a mesma iluminação na distância típica de cada luz até as peças.
+-  scene.add(new THREE.HemisphereLight(0xe9f2ff, 0x5c6c7c, 1.32));
+-  const key = new THREE.DirectionalLight(0xfafbff, 4.08);
+-  key.position.set(-8, 48, 30);
+-  key.target.position.set(-24, 0, -10);
++  scene.add(new THREE.HemisphereLight(0xf4f5f6, 0x8f8b86, 0.55));
++  // Luz principal (entrada de luz pelas claraboias), com sombras cobrindo o galpão inteiro.
++  const key = new THREE.DirectionalLight(0xfff4e6, 3.4);
++  key.position.set(-26, 56, 40);
++  key.target.position.set(0, 0, 7);
+   key.castShadow = true;
+-  key.shadow.mapSize.set(2048, 2048);
+-  Object.assign(key.shadow.camera, { left: -38, right: 38, top: 32, bottom: -30, near: 5, far: 110 });
+-  key.shadow.bias = -0.0004;
+-  key.shadow.normalBias = 0.03;
++  key.shadow.mapSize.set(4096, 4096);
++  Object.assign(key.shadow.camera, { left: -90, right: 90, top: 80, bottom: -80, near: 5, far: 150 });
++  key.shadow.bias = -0.0003;
++  key.shadow.normalBias = 0.04;
++  key.shadow.radius = 3;
+   scene.add(key);
+   scene.add(key.target);
+-  const fill = new THREE.DirectionalLight(0xbbd8f5, 1.0);
++  const fill = new THREE.DirectionalLight(0xe4eaf0, 0.55);
+   fill.position.set(40, 20, -30);
+   scene.add(fill);
+   const spotA = new THREE.SpotLight(0xffffff, 2.26, 36, 0.5, 0.75, 0);

@@ -38,6 +38,8 @@ import { createControls } from './ui/controls';
 import { createTour } from './ui/tour';
 import { createHud } from './ui/hud';
 import { createWmrPanel } from './ui/wmrPanel';
+import { bakeFloor } from './scene/floorBake';
+import { bakeEnvironment } from './scene/environment';
 import { startLoop } from './loop';
 import { installDebugHooks } from './debug';
 
@@ -86,6 +88,7 @@ async function boot() {
   const life = buildAreaLife(fleet);
   // 4. telas do WES e da IA, fluxos de dados e conversa
   const screens = buildScreens(life);
+  bakeFloor(screens); // piso com sombra de contato: precisa de todos os colisores
   const flows = buildFlows(screens);
   const conversation = createConversation(flows);
   // 5. interação e laço
@@ -93,6 +96,7 @@ async function boot() {
   const tour = createTour(controls);
   const panel = createWmrPanel(tour);
   const hud = createHud(panel);
+  bakeEnvironment(hud); // reflexos e luz indireta a partir do galpão montado
   installDebugHooks(startLoop(hud));
   el('loading')!.classList.add('done');
 }

@@ -6,7 +6,8 @@ import path from 'path';
  * Orçamento por quadro (passada principal, vista inicial). Subir esses limites é uma decisão de projeto:
  * registre o motivo em docs/CHANGELOG.md. Referência: GPU integrada de notebook a 60 quadros/s.
  */
-const BUDGET = { calls: 800, tris: 750_000, shadowCalls: 550 };
+// shadowCalls: 550 → 650 na etapa de realismo (sombras cobrem o galpão inteiro; atualizadas a cada 2 quadros). Veja o CHANGELOG.
+const BUDGET = { calls: 800, tris: 750_000, shadowCalls: 650 };
 
 const { browser, page, errors } = await openScene();
 await page.waitForTimeout(1500);

@@ -7,14 +7,17 @@ export function createStage(ctx: BaseCtx) {
   const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, powerPreference: 'high-performance' });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 0.94;
+  // Neutral (Khronos PBR Neutral): mantém o azul WEG e o branco sem o desvio de matiz do ACES.
+  renderer.toneMapping = THREE.NeutralToneMapping;
+  renderer.toneMappingExposure = 0.82;
   renderer.shadowMap.enabled = true;
+  renderer.shadowMap.autoUpdate = false; // atualizado em loop.ts, em quadros alternados
   renderer.shadowMap.type = THREE.PCFShadowMap;
   const maxAniso = renderer.capabilities.getMaxAnisotropy();
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x061528);
-  scene.fog = new THREE.FogExp2(0x0a1c31, 0.0062); // névoa e fundo usam a cor de saída (sRGB) direto, sem conversão;
+  scene.background = new THREE.Color(0xbcbcb9);
+  // Névoa leve e neutra: a poeira de um galpão grande atenua as áreas distantes e dá profundidade.
+  scene.fog = new THREE.FogExp2(0xbcbcb9, 0.0032);
   const camera = new THREE.PerspectiveCamera(62, 1, 0.12, 420);
   camera.rotation.order = 'YXZ';
   // ambiente para reflexos controlados nos metais (galpão estilizado: luminárias no teto, faixa de janelas)
@@ -22,10 +25,10 @@ export function createStage(ctx: BaseCtx) {
     const c = cvs(1024, 512),
       g = ctx2d(c);
     const gr = g.createLinearGradient(0, 0, 0, 512);
-    gr.addColorStop(0, '#16263b');
-    gr.addColorStop(0.42, '#33485f');
-    gr.addColorStop(0.5, '#26364a');
-    gr.addColorStop(1, '#0e141c');
+    gr.addColorStop(0, '#9aa3ab');
+    gr.addColorStop(0.42, '#c9cfd4');
+    gr.addColorStop(0.5, '#b4babf');
+    gr.addColorStop(1, '#5d6063');
     g.fillStyle = gr;
     g.fillRect(0, 0, 1024, 512);
     for (let r = 0; r < 5; r++) {
@@ -33,7 +36,7 @@ export function createStage(ctx: BaseCtx) {
       const y = 26 + r * 34;
       for (let k = 0; k < 18; k++) g.fillRect(k * 57 + 12, y, 30 - r * 3, 7 - r);
     }
-    g.fillStyle = 'rgba(110,160,215,.35)';
+    g.fillStyle = 'rgba(210,225,240,.35)';
     g.fillRect(0, 196, 1024, 16);
     const t = new THREE.CanvasTexture(c);
     t.mapping = THREE.EquirectangularReflectionMapping;
@@ -46,18 +49,20 @@ export function createStage(ctx: BaseCtx) {
   // luzes — unidades físicas (padrão desde o r155).
   // Pontuais e spots usam decay 0: luz de "artista", que só se apaga perto de `distance`. As intensidades foram
   // calculadas na migração do r128 para manter a mesma iluminação na distância típica de cada luz até as peças.
-  scene.add(new THREE.HemisphereLight(0xe9f2ff, 0x5c6c7c, 1.32));
-  const key = new THREE.DirectionalLight(0xfafbff, 4.08);
-  key.position.set(-8, 48, 30);
-  key.target.position.set(-24, 0, -10);
+  scene.add(new THREE.HemisphereLight(0xf4f5f6, 0x8f8b86, 0.4));
+  // Luz principal (entrada de luz pelas claraboias), com sombras cobrindo o galpão inteiro.
+  const key = new THREE.DirectionalLight(0xfff4e6, 2.8);
+  key.position.set(-26, 56, 40);
+  key.target.position.set(0, 0, 7);
   key.castShadow = true;
-  key.shadow.mapSize.set(2048, 2048);
-  Object.assign(key.shadow.camera, { left: -38, right: 38, top: 32, bottom: -30, near: 5, far: 110 });
-  key.shadow.bias = -0.0004;
-  key.shadow.normalBias = 0.03;
+  key.shadow.mapSize.set(4096, 4096);
+  Object.assign(key.shadow.camera, { left: -90, right: 90, top: 80, bottom: -80, near: 5, far: 150 });
+  key.shadow.bias = -0.0003;
+  key.shadow.normalBias = 0.04;
+  key.shadow.radius = 3;
   scene.add(key);
   scene.add(key.target);
-  const fill = new THREE.DirectionalLight(0xbbd8f5, 1.0);
+  const fill = new THREE.DirectionalLight(0xe4eaf0, 0.55);
   fill.position.set(40, 20, -30);
   scene.add(fill);
   const spotA = new THREE.SpotLight(0xffffff, 2.26, 36, 0.5, 0.75, 0);

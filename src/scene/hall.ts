@@ -1,22 +1,30 @@
-/** Galpão: piso e demarcações, paredes, portões, exaustores, pilares, treliças, cobertura, luminárias e sinalização. */
+/** Galpão: casco em GLB (paredes, pilares, treliças, cobertura, luminárias, portões); piso e demarcações, exaustores, mezanino, tubulações e sinalização. */
 import * as THREE from 'three';
 import { Builder, UG, std } from '../core/builder';
 import { txt, ctx2d } from '../core/canvas2d';
-import { concreteTex, ribTex, rtex, signTex, slatTex } from '../core/textures';
+import { rtex, signTex, slatTex } from '../core/textures';
+import { concreteDetailCanvas } from '../core/surfaces';
 import type { AfterMaterials } from '../ctx';
 export function buildHall(ctx: AfterMaterials) {
-  const { MP, colliders, imgs, maxAniso, scene } = ctx;
+  const { MP, colliders, imgs, maxAniso, models, scene } = ctx;
   // ---------------- galpão: piso, paredes, pilares, treliças, cobertura e luminárias
   const HX0 = -66,
     HX1 = 66,
     HZ0 = -42,
     HZ1 = 56,
     HC = 24.8;
-  const floorT = rtex(concreteTex(), 140 / 8, 110 / 8, maxAniso);
-  const floor = new THREE.Mesh(
-    new THREE.PlaneGeometry(140, 110),
-    std(0xffffff, 0.62, 0.05, { map: floorT, envMapIntensity: 0.7 }),
-  );
+  // Piso: o mapa de cor grande (lajes, desgaste, sombra de contato) é assado depois, em scene/floorBake.ts, quando
+  // os colisores já existem. Aqui ficam o micro-relevo e a rugosidade, que se repetem a cada 3 m.
+  const detail = concreteDetailCanvas();
+  detail.repeat.set(140 / 3, 110 / 3);
+  detail.anisotropy = maxAniso;
+  const floorMat = std(0xa3a5a6, 1.25, 0.0, {
+    bumpMap: detail,
+    bumpScale: 0.12,
+    roughnessMap: detail, // média 0,5 × 1,25 = rugosidade ~0,62 (concreto liso, não espelhado)
+    envMapIntensity: 0.5,
+  });
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(140, 110), floorMat);
   floor.rotation.x = -Math.PI / 2;
   floor.position.set(0, 0, 7);
   floor.receiveShadow = true;
@@ -99,45 +107,31 @@ export function buildHall(ctx: AfterMaterials) {
   floorText('LINHA 1 · CÉLULA 01', 'montagem e movimentação de motores', -21, 5.2, 11);
   floorText('CENTRO DE MONITORAMENTO', 'WEGnology Edge Suite', 29, 5.0, 11);
   floorText('ÁREA DE MANUTENÇÃO', null, -60, 27.6, 7.5);
-  // paredes: base de concreto, fechamento metálico e faixa de janelas
-  const cladT = rtex(ribTex('#3a4d63', '#4f6580', '#2b3a4c', 4), 1, 1);
-  function wall(x0, z0, x1, z1) {
-    const L = Math.hypot(x1 - x0, z1 - z0),
-      ang = Math.atan2(-(z1 - z0), x1 - x0),
-      cx = (x0 + x1) / 2,
-      cz = (z0 + z1) / 2;
-    const nx = -(z1 - z0) / L,
-      nz = (x1 - x0) / L;
-    const t = cladT.clone();
-    t.needsUpdate = true;
-    t.repeat.set(L / 1.2, 1);
-    const cl = new THREE.Mesh(UG.plane, std(0xffffff, 0.55, 0.45, { map: t }));
-    cl.scale.set(L, HC - 3.2, 1);
-    cl.position.set(cx, 3.2 + (HC - 3.2) / 2, cz);
-    cl.rotation.y = ang;
-    cl.receiveShadow = true;
-    scene.add(cl);
-    const b = new Builder();
-    b.box(MP.panel, L, 3.2, 0.3, cx - nx * 0.15, 1.6, cz - nz * 0.15, 0, ang, 0);
-    b.plane(MP.glow, L, 2.2, cx + nx * 0.03, 18.6, cz + nz * 0.03, 0, ang, 0);
-    for (let s = 0; s <= L; s += 4)
-      b.box(
-        MP.struct,
-        0.12,
-        2.4,
-        0.12,
-        x0 + ((x1 - x0) * s) / L + nx * 0.06,
-        18.6,
-        z0 + ((z1 - z0) * s) / L + nz * 0.06,
-      );
-    b.box(MP.struct, L, 0.14, 0.18, cx + nx * 0.08, 17.45, cz + nz * 0.08, 0, ang, 0);
-    b.box(MP.struct, L, 0.14, 0.18, cx + nx * 0.08, 19.75, cz + nz * 0.08, 0, ang, 0);
-    b.build(scene, false, true);
-  }
-  wall(HX0, HZ0, HX1, HZ0);
-  wall(HX1, HZ0, HX1, HZ1);
-  wall(HX1, HZ1, HX0, HZ1);
-  wall(HX0, HZ1, HX0, HZ0);
+  // casco do galpão (GLB): paredes, janelas, pilares, treliças, terças, vigas de rolamento, cobertura, claraboias,
+  // luminárias e 4 portões. O GLB comprimido não nomeia nós nem malhas, então elas são identificadas pelo material.
+  // Cobertura, fechamento e vidros só recebem sombra: se projetassem, o sol do stage.ts (que entra pelas claraboias
+  // do modelo original) ficaria preso fora do galpão. O piso do GLB é descartado: vale o piso do projeto, acima.
+  const shell = models.hall;
+  const NO_CAST = new Set(['M_Cobertura', 'M_Cladding', 'M_Vidro', 'M_Claraboia']);
+  const floorMeshes: THREE.Mesh[] = [];
+  shell.traverse((o) => {
+    const m = o as THREE.Mesh;
+    if (!m.isMesh) return;
+    const name = (m.material as THREE.Material).name;
+    if (name === 'M_Piso') {
+      floorMeshes.push(m);
+      return;
+    }
+    m.castShadow = !NO_CAST.has(name);
+    m.receiveShadow = true;
+  });
+  if (!floorMeshes.length) throw new Error('Modelo 3D do galpão: material M_Piso não encontrado');
+  floorMeshes.forEach((m) => {
+    m.removeFromParent();
+    m.geometry.dispose();
+    (m.material as THREE.Material).dispose();
+  });
+  scene.add(shell);
   // portões industriais
   const slat = rtex(slatTex(), 1, 4);
   function door(x, z, w, h, ang) {
@@ -175,10 +169,6 @@ export function buildHall(ctx: AfterMaterials) {
     b.box(MP.dark, w + 1, 0.9, 0.7, x + nx * 0.35, h + 0.45, z + nz * 0.35, 0, ang, 0);
     b.build(scene, true, true);
   }
-  door(-30, HZ0, 7, 6.5, 0);
-  door(40, HZ0, 7, 6.5, 0);
-  door(HX0, 34, 6, 6, Math.PI / 2);
-  door(-20, HZ1, 8, 7, Math.PI);
   (
     [
       [-30, HZ0 + 0.4, 'PORTÃO 02', 0],
@@ -217,44 +207,18 @@ export function buildHall(ctx: AfterMaterials) {
     fb.build(f, false, true);
     fans.push(f);
   });
-  // pilares (perfil I) e treliças da cobertura
-  const ST = new Builder(),
-    COL = new Builder();
+  // pilares: as malhas vêm do GLB; aqui ficam só as posições (piso assado e colisores)
   const FX = [-66, -44, -22, 0, 22, 44, 66];
-  function column(x, z, h) {
-    COL.box(MP.panel, 1.1, 0.5, 1.1, x, 0.25, z);
-    ST.box(MP.struct, 0.7, h, 0.06, x, h / 2, z - 0.34);
-    ST.box(MP.struct, 0.7, h, 0.06, x, h / 2, z + 0.34);
-    ST.box(MP.struct, 0.06, h, 0.62, x, h / 2, z);
-  }
-  FX.forEach((x) => {
-    [HZ0 + 0.4, -18, HZ1 - 0.4].forEach((z) => column(x, z, 21));
-  });
+  const columns: { x: number; z: number }[] = [];
+  FX.forEach((x) => [HZ0 + 0.4, -18, HZ1 - 0.4].forEach((z) => columns.push({ x, z })));
   [-28, -14, 0, 14, 28, 42].forEach((z) => {
-    column(HX0 + 0.4, z, 21);
-    column(HX1 - 0.4, z, 21);
+    columns.push({ x: HX0 + 0.4, z });
+    columns.push({ x: HX1 - 0.4, z });
   });
-  COL.build(scene, true, true);
   FX.forEach((x) => {
     if (Math.abs(x) !== 66) colliders.push({ x0: x - 0.6, x1: x + 0.6, z0: -18.6, z1: -17.4 });
   });
-  FX.forEach((x) => {
-    ST.box(MP.struct, 0.24, 0.24, HZ1 - HZ0, x, 21, (HZ0 + HZ1) / 2);
-    ST.box(MP.struct, 0.24, 0.24, HZ1 - HZ0, x, 24.4, (HZ0 + HZ1) / 2);
-    for (let z = HZ0, i = 0; z < HZ1 - 0.1; z += 3.5, i++) {
-      ST.box(MP.struct, 0.14, 3.4, 0.14, x, 22.7, z);
-      const z2 = z + 3.5;
-      if (i % 2) ST.beam(MP.struct, x, 21, z, x, 24.4, z2, 0.12, 0.12);
-      else ST.beam(MP.struct, x, 24.4, z, x, 21, z2, 0.12, 0.12);
-    }
-  });
-  for (let z = HZ0; z <= HZ1; z += 3.5) ST.box(MP.struct, HX1 - HX0, 0.22, 0.14, 0, 24.55, z);
-  // ponte rolante: vigas de rolamento
-  [HZ0 + 1.2, -18.7].forEach((z) => {
-    ST.box(MP.struct, HX1 - HX0, 0.9, 0.42, 0, 15, z);
-    ST.box(MP.steel, HX1 - HX0, 0.1, 0.12, 0, 15.5, z);
-  });
-  FX.forEach((x) => ST.box(MP.struct, 0.5, 0.7, 0.9, x, 14.2, -18.4));
+  const ST = new Builder();
   // mezanino técnico (passarela) ao longo da parede do fundo
   ST.box(MP.frame, HX1 - HX0 - 4, 0.18, 2.8, 0, 6.5, HZ0 + 1.6);
   for (let x = HX0 + 3; x < HX1 - 2; x += 6) {
@@ -292,29 +256,9 @@ export function buildHall(ctx: AfterMaterials) {
   });
   tray(-29.6, -5.0, 6.85, 3.5);
   ST.build(scene, false, true);
-  // cobertura e luminárias
-  {
-    const rt = rtex(ribTex('#18283a', '#22364c', '#111d2a', 6), HX1 - HX0, 1);
-    rt.rotation = Math.PI / 2;
-    const roof = new THREE.Mesh(UG.plane, std(0xffffff, 0.7, 0.4, { map: rt }));
-    roof.scale.set(HX1 - HX0, HZ1 - HZ0, 1);
-    roof.rotation.x = Math.PI / 2;
-    roof.position.set(0, HC, (HZ0 + HZ1) / 2);
-    scene.add(roof);
-    const b = new Builder();
-    const sky = new THREE.MeshBasicMaterial({ color: 0x86a3bc });
-    [-30, -6, 18, 42].forEach((z) => b.plane(sky, HX1 - HX0, 3.0, 0, HC - 0.06, z, Math.PI / 2, 0, 0));
-    const lamp = new THREE.MeshBasicMaterial({ color: 0xf9fbff }),
-      hous = std(0x838f9b, 0.5, 0.5);
-    [-55, -33, -11, 11, 33, 55].forEach((x) =>
-      [-30, -15, 0, 14, 28, 42].forEach((z) => {
-        b.box(hous, 2.8, 0.16, 0.56, x, 18.6, z);
-        b.plane(lamp, 2.6, 0.42, x, 18.51, z, Math.PI / 2, 0, 0);
-        [-1.1, 1.1].forEach((dx) => b.box(MP.steelD, 0.03, HC - 0.3 - 18.7, 0.03, x + dx, (18.7 + HC - 0.3) / 2, z));
-      }),
-    );
-    b.build(scene, false, false);
-  }
+  // luminárias: as malhas vêm do GLB; aqui ficam só as posições (poças de luz do piso assado)
+  const lamps: { x: number; z: number }[] = [];
+  [-55, -33, -11, 11, 33, 55].forEach((x) => [-30, -15, 0, 14, 28, 42].forEach((z) => lamps.push({ x, z })));
   // sinalização institucional e de linha
   function hangSign(x, y, z, w, h, tx, ry?, rodTop?) {
     const m = new THREE.Mesh(UG.box, [
@@ -419,5 +363,22 @@ export function buildHall(ctx: AfterMaterials) {
     m.position.set(-12, 13, HZ0 + 0.2);
     scene.add(m);
   }
-  return Object.assign(ctx, { HC, HX0, HX1, HZ0, HZ1, door, fans, floorText, hangSign, lineM, mk, pipeM, rect });
+  return Object.assign(ctx, {
+    HC,
+    HX0,
+    HX1,
+    HZ0,
+    HZ1,
+    columns,
+    door,
+    fans,
+    floor,
+    floorText,
+    hangSign,
+    lamps,
+    lineM,
+    mk,
+    pipeM,
+    rect,
+  });
 }

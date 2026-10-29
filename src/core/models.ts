@@ -8,6 +8,7 @@ import { MeshoptDecoder } from 'three/addons/libs/meshopt_decoder.module.js';
 import { toCreasedNormals } from 'three/addons/utils/BufferGeometryUtils.js';
 import w22Url from '../assets/models/w22-326t.glb?url';
 import w22LoUrl from '../assets/models/w22-326t-lo.glb?url';
+import hallUrl from '../assets/models/galpao-edge-city.glb?url';
 
 /** Modelos carregados antes da montagem da cena (main.ts). */
 export interface Models {
@@ -15,6 +16,8 @@ export interface Models {
   w22: THREE.Group;
   /** Mesmo motor, versão leve: motores das linhas, berços e bancadas. */
   w22Lo: THREE.Group;
+  /** Casco do galpão (paredes, pilares, treliças, cobertura, luminárias, portões), no mesmo sistema de coordenadas do hall.ts. Materiais próprios do arquivo. */
+  hall: THREE.Group;
 }
 
 const loader = new GLTFLoader();
@@ -75,8 +78,8 @@ export function slotGeometries(root: THREE.Object3D): Record<string, THREE.Buffe
 }
 
 export async function loadModels(): Promise<Models> {
-  const [w22, w22Lo] = await Promise.all([loadModel(w22Url), loadModel(w22LoUrl)]);
-  return { w22, w22Lo };
+  const [w22, w22Lo, hall] = await Promise.all([loadModel(w22Url), loadModel(w22LoUrl), loadModel(hallUrl)]);
+  return { w22, w22Lo, hall };
 }
 
 /** Troca os materiais do modelo pelos da cena, pelo nome do slot, e liga as sombras. */
