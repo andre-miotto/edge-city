@@ -112,6 +112,7 @@ export function bakeFloor(ctx: AfterScreens) {
     return { x0: b.x0, x1: b.x1, z0: b.z0, z1: b.z1, ang: 0, cx: 0, cz: 0 };
   };
   colliders.forEach((b) => {
+    if ((b as { dynamic?: boolean }).dynamic) return;
     const q = bounds(b);
     shadowRect(q.x0, q.z0, q.x1, q.z1, 2.2, 0.32, q.ang, q.cx, q.cz);
     shadowRect(q.x0, q.z0, q.x1, q.z1, 0.5, 0.42, q.ang, q.cx, q.cz);

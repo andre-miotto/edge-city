@@ -4,12 +4,12 @@
  * - time.pt1: tempo de produção da célula 01 (para quando a célula é pausada).
  */
 import { drawCLP } from './screens/clpPanel';
-import type { AfterHud } from './ctx';
+import type { AfterDrive } from './ctx';
 
-export function startLoop(ctx: AfterHud) {
+export function startLoop(ctx: AfterDrive) {
   const { renderer, scene, camera, canvas, controls, tour, time, imgs } = ctx;
   const { cell1, cell2, xRoll, XV2, AREAS, wmrPanel, fans, crane, trolley, HZ0, led, ttRing, clpCv, clpTex } = ctx;
-  const { updateFlows, updateConversation } = ctx;
+  const { updateFlows, updateConversation, drive } = ctx;
   let prev = performance.now(),
     lastClp = -1,
     frameNo = 0;
@@ -40,6 +40,7 @@ export function startLoop(ctx: AfterHud) {
     // câmera: visita/voo ou navegação livre
     tour.update(dt);
     controls.update(dt);
+    drive.update(dt); // empilhadeira: dirige e, se estiver em uso, posiciona a câmera
     const player = controls.player;
     camera.position.copy(player.pos);
     camera.rotation.set(player.pitch, player.yaw, 0);

@@ -23,7 +23,7 @@
       <div class="hud help">
         <span class="keys"
           >Arraste para olhar · <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> ou setas para andar ·
-          <kbd>Shift</kbd> corre<br /></span
+          <kbd>Shift</kbd> corre · <kbd>E</kbd> perto da empilhadeira dirige<br /></span
         ><span class="note"
           >Valores e equipamentos ilustrativos. Só o sensor <b>TT-01</b> (ciano) alimenta os dados do WES; os demais
           sensores, robôs móveis e operadores são demonstrativos. Clique num WMR para ver a tarefa.</span
@@ -34,6 +34,12 @@
         <button class="left" data-k="l" aria-label="Andar para a esquerda">◀</button>
         <button class="down" data-k="b" aria-label="Andar para trás">▼</button>
         <button class="right" data-k="r" aria-label="Andar para a direita">▶</button>
+      </div>
+      <div class="hud interact" id="interact" hidden>
+        <button type="button" id="interactBtn">
+          <kbd>E</kbd>
+          <span><small id="interactName">Empilhadeira</small><b id="interactAction">Dirigir</b></span>
+        </button>
       </div>
       <div class="hud wmr" id="wmr" aria-live="polite">
         <header><b id="wmrId">WMR</b><button id="wmrClose" aria-label="Fechar painel do robô">Fechar</button></header>

@@ -30,6 +30,7 @@ import type { createControls } from './ui/controls';
 import type { createTour } from './ui/tour';
 import type { createWmrPanel } from './ui/wmrPanel';
 import type { createHud } from './ui/hud';
+import type { createDrive } from './ui/drive';
 import type { startLoop } from './loop';
 import type { installDebugHooks } from './debug';
 
@@ -73,6 +74,7 @@ export type AfterControls = ReturnType<typeof createControls>;
 export type AfterTour = ReturnType<typeof createTour>;
 export type AfterWmrPanel = ReturnType<typeof createWmrPanel>;
 export type AfterHud = ReturnType<typeof createHud>;
+export type AfterDrive = ReturnType<typeof createDrive>;
 export type AfterLoop = ReturnType<typeof startLoop>;
 export type AfterDebug = ReturnType<typeof installDebugHooks>;
 

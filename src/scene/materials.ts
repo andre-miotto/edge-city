@@ -11,6 +11,8 @@ export interface Box2 {
   x1: number;
   z0: number;
   z1: number;
+  /** Colisor que acompanha um objeto móvel (empilhadeira): fica fora do piso assado (scene/floorBake.ts). */
+  dynamic?: boolean;
 }
 /** Retângulo girado no piso: centro (cx, cz), meia largura `hw`, meia profundidade `hd`, ângulo `ang`. */
 export interface RotBox2 {

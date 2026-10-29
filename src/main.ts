@@ -37,6 +37,7 @@ import { createConversation } from './data/conversation';
 import { createControls } from './ui/controls';
 import { createTour } from './ui/tour';
 import { createHud } from './ui/hud';
+import { createDrive } from './ui/drive';
 import { createWmrPanel } from './ui/wmrPanel';
 import { bakeFloor } from './scene/floorBake';
 import { bakeEnvironment } from './scene/environment';
@@ -96,8 +97,9 @@ async function boot() {
   const tour = createTour(controls);
   const panel = createWmrPanel(tour);
   const hud = createHud(panel);
-  bakeEnvironment(hud); // reflexos e luz indireta a partir do galpão montado
-  installDebugHooks(startLoop(hud));
+  const drive = createDrive(hud); // empilhadeira dirigível: usa os controles e o galpão montado
+  bakeEnvironment(drive); // reflexos e luz indireta a partir do galpão montado
+  installDebugHooks(startLoop(drive));
   el('loading')!.classList.add('done');
 }
 

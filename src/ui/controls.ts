@@ -7,7 +7,7 @@ import * as THREE from 'three';
 import { clamp } from '../core/math';
 import type { AfterConversation } from '../ctx';
 
-const EYE = 1.75;
+export const EYE = 1.75;
 const BOUNDS = { x0: -65.2, x1: 65.2, z0: -38.3, z1: 55.2 };
 
 /** Posição e direção do visitante (câmera em primeira pessoa). */
@@ -45,6 +45,8 @@ export function createControls(ctx: AfterConversation) {
   const HOME = { pos: player.pos.clone(), yaw: player.yaw, pitch: player.pitch };
   type Key = 'f' | 'b' | 'l' | 'r' | 'run';
   const keys: Partial<Record<Key, boolean>> = {};
+  /** true enquanto o visitante dirige um veículo (ui/drive.ts): o movimento a pé fica parado. */
+  const vehicle = { active: false };
   let dragging = false,
     lx = 0,
     ly = 0,
@@ -172,7 +174,7 @@ export function createControls(ctx: AfterConversation) {
 
   /** Movimento a pé (ignorado enquanto uma visita ou voo controla a câmera). */
   function update(dt: number) {
-    if (hooks.isGuided()) return;
+    if (hooks.isGuided() || vehicle.active) return;
     const sp = (keys.run ? 15 : 7.5) * dt;
     const fx = -Math.sin(player.yaw),
       fz = -Math.cos(player.yaw);
@@ -219,6 +221,6 @@ export function createControls(ctx: AfterConversation) {
   }
 
   return Object.assign(ctx, {
-    controls: { player, HOME, update, goHome, lookFrom, collide, hooks },
+    controls: { player, HOME, update, goHome, lookFrom, collide, hooks, keys, vehicle },
   });
 }

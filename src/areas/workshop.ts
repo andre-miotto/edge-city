@@ -1,4 +1,4 @@
-/** Manutenção, montagem manual, porta-paletes da parede, empilhadeira, usinagem e expedição. */
+/** Manutenção, montagem manual, porta-paletes da parede, usinagem e expedição. */
 import * as THREE from 'three';
 import { Builder, UG, std } from '../core/builder';
 import type { AfterProductionLines } from '../ctx';
@@ -83,20 +83,6 @@ export function buildWorkshop(ctx: AfterProductionLines) {
       b.box(MP.pallet, 1.2, 0.14, 1.0, p[0], 0.07, p[1]);
       b.box(MP.wood, 1.1, 0.9 + 0.2 * (i % 2), 0.9, p[0], 0.6 + 0.1 * (i % 2), p[1]);
     });
-    // empilhadeira estacionada
-    b.box(MP.weg, 1.2, 1.0, 2.2, -58, 0.75, 3);
-    b.box(MP.dark, 1.1, 0.08, 1.6, -58, 2.4, 3.3);
-    [-0.5, 0.5].forEach((x) => {
-      b.box(MP.dark, 0.06, 2.2, 0.06, -58 + x, 1.35, 4.1);
-      b.box(MP.dark, 0.06, 2.2, 0.06, -58 + x, 1.35, 2.5);
-    });
-    b.box(MP.steelD, 0.12, 3.2, 0.12, -58.35, 1.6, 4.25);
-    b.box(MP.steelD, 0.12, 3.2, 0.12, -57.65, 1.6, 4.25);
-    [-0.2, 0.2].forEach((x) => b.box(MP.steel, 0.12, 0.06, 1.2, -58 + x, 0.12, 4.9));
-    [-1, 1].forEach((s) =>
-      [-0.7, 0.7].forEach((z) => b.cyl(MP.rubber, 0.3, 0.25, -58 + s * 0.62, 0.3, 3 + z, 0, 0, Math.PI / 2, 16)),
-    );
-    b.box(MP.dark, 0.5, 0.6, 0.5, -58, 1.55, 2.6);
     b.build(scene, true, true);
     [
       [-58, 0.86, 24, 0.6],
@@ -126,7 +112,6 @@ export function buildWorkshop(ctx: AfterProductionLines) {
   box2(-62.1, -60.9, 19.1, 19.9);
   box2(-58.9, -57.1, 23.4, 24.6);
   box2(-47.5, -40.4, -2.5, -0.2);
-  box2(-58.8, -57.2, 1.6, 5.6);
   box2(37, 44, -38, -33.8);
   box2(57.6, 59.8, -39, -31.5);
   // usinagem: centros de usinagem (representação genérica) e expedição de motores prontos
