@@ -13,7 +13,10 @@ export function startLoop(ctx: AfterDrive) {
   let prev = performance.now(),
     lastClp = -1,
     lastShadow = -Infinity;
-  const SHADOW_EVERY = 66; // ms entre atualizações do mapa de sombras
+  let frameMs = 16;
+  // ms entre atualizações do mapa de sombras: ~15 Hz e, se o quadro está lento, mais espaçado (4 quadros), até 4 Hz.
+  // Assim a passada de sombras (centenas de chamadas) não cai em quase todo quadro de uma GPU já no limite.
+  const shadowEvery = () => Math.min(250, Math.max(66, frameMs * 4));
   // ?freeze=<segundos>: tempo parado num instante fixo (capturas determinísticas dos testes visuais)
   const freeze = Number(new URLSearchParams(location.search).get('freeze'));
   if (freeze > 0) {
@@ -34,6 +37,7 @@ export function startLoop(ctx: AfterDrive) {
 
   function frame(now) {
     const dt = time.fixed ? 0 : Math.min(0.1, (now - prev) / 1000);
+    frameMs += (Math.min(100, now - prev) - frameMs) * 0.05; // média móvel do tempo de quadro
     prev = now;
     time.clock += dt;
     const t = time.clock;
@@ -73,9 +77,9 @@ export function startLoop(ctx: AfterDrive) {
 
     // O mapa de sombras cobre o galpão todo e é o item mais caro do quadro. As sombras dependem só da luz e dos objetos
     // (não da câmera) e o que se move é lento (WMR, pessoas, empilhadeira), então elas são atualizadas por tempo
-    // (~15 Hz) e não por quadro: o custo cai com a mesma proporção em qualquer taxa de quadros. Com o tempo parado
+    // (~15 Hz, mais espaçado se o quadro está lento) e não por quadro: o custo cai com a mesma proporção em qualquer taxa de quadros. Com o tempo parado
     // (?freeze) atualiza sempre, para as capturas dos testes.
-    if (time.fixed || now - lastShadow >= SHADOW_EVERY) {
+    if (time.fixed || now - lastShadow >= shadowEvery()) {
       renderer.shadowMap.needsUpdate = true;
       lastShadow = now;
     }
