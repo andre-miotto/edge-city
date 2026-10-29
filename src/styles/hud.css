@@ -300,16 +300,106 @@ button[aria-pressed='true'] {
   position: absolute;
   inset: 0;
   display: grid;
-  place-items: center;
-  background: var(--bg);
+  grid-template-rows: 1fr auto;
+  justify-items: center;
+  background: radial-gradient(ellipse at 50% 42%, #0a2547 0%, var(--bg) 70%);
   z-index: 9;
-  font: 600 15px var(--font);
   color: var(--muted);
-  transition: opacity 0.6s;
+  transition: opacity 0.7s;
 }
 #loading.done {
   opacity: 0;
   pointer-events: none;
+}
+.splash {
+  align-self: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 0 24px;
+  text-align: center;
+  animation: splash-in 0.9s ease-out both;
+}
+.splash img:first-child {
+  width: 112px;
+  height: 112px;
+  border-radius: 24px;
+  margin-bottom: 8px;
+}
+.splash h1 {
+  margin: 0;
+  font: 700 clamp(26px, 4vw, 40px) / 1.1 var(--font);
+  color: var(--fg);
+}
+.splash p {
+  margin: 0;
+  max-width: 34em;
+  font: 400 clamp(14px, 1.6vw, 18px) / 1.4 var(--font);
+  color: #a9c4e0;
+}
+.splash #splashWeg {
+  width: 44px;
+  margin-top: 14px;
+  opacity: 0.85;
+}
+.splash-foot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: calc(22px + env(safe-area-inset-bottom, 0px));
+  font: 500 12px var(--font);
+}
+.splash-bar {
+  width: 120px;
+  height: 2px;
+  border-radius: 1px;
+  background: rgba(47, 123, 192, 0.25);
+  overflow: hidden;
+}
+.splash-bar i {
+  display: block;
+  width: 40%;
+  height: 100%;
+  background: var(--accent);
+  animation: splash-bar 1.2s ease-in-out infinite;
+}
+.splash-foot small {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: rgba(143, 176, 208, 0.6);
+}
+#loading.error .splash-bar {
+  display: none;
+}
+#loading.error #loadingMsg {
+  max-width: min(520px, calc(100vw - 48px));
+  text-align: center;
+  color: var(--amber);
+}
+@keyframes splash-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+@keyframes splash-bar {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(250%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .splash,
+  .splash-bar i {
+    animation: none;
+  }
+  #loading {
+    transition: none;
+  }
 }
 
 /* aviso de interação (E · Dirigir) */

@@ -88,7 +88,19 @@
         </button>
       </div>
       <div class="hud cap" id="cap" aria-live="polite"><small id="capN">Visita guiada</small><b id="capT"></b></div>
-      <div id="loading">Montando Edge City…</div>
+      <div id="loading" role="status" aria-live="polite">
+        <div class="splash">
+          <img id="splashIcon" alt="" />
+          <h1>WEGnology Edge Suite</h1>
+          <p>Inteligência e conectividade que agilizam a produção e otimizam a gestão</p>
+          <img id="splashWeg" alt="WEG" />
+        </div>
+        <div class="splash-foot">
+          <div class="splash-bar"><i></i></div>
+          <span id="loadingMsg">Montando Edge City…</span>
+          <small>Feito por André Miotto</small>
+        </div>
+      </div>
     </div>
     <script type="module" src="/src/main.ts"></script>
   </body>

@@ -8,7 +8,7 @@ import wegLogoUrl from './assets/weg_white.png';
 import wesIconUrl from './assets/wes_icon.png';
 
 import { initUG } from './core/builder';
-import { loadImg, el } from './core/env';
+import { loadImg, el, reduceMotion } from './core/env';
 import { loadModels } from './core/models';
 import { loadFonts } from './core/fonts';
 import type { BaseCtx } from './ctx';
@@ -45,6 +45,12 @@ import { startLoop } from './loop';
 import { installDebugHooks } from './debug';
 
 (el('brandIcon') as HTMLImageElement).src = wesIconUrl;
+(el('splashIcon') as HTMLImageElement).src = wesIconUrl;
+(el('splashWeg') as HTMLImageElement).src = wegLogoUrl;
+
+/** Tempo mínimo da tela de abertura. Navegador automatizado (testes), ?freeze e movimento reduzido não esperam. */
+const SPLASH_MIN_MS = 2200;
+const splashT0 = performance.now();
 
 async function boot() {
   try {
@@ -100,10 +106,13 @@ async function boot() {
   const drive = createDrive(hud); // empilhadeira dirigível: usa os controles e o galpão montado
   bakeEnvironment(drive); // reflexos e luz indireta a partir do galpão montado
   installDebugHooks(startLoop(drive));
-  el('loading')!.classList.add('done');
+  const skip = reduceMotion || navigator.webdriver || new URLSearchParams(location.search).has('freeze');
+  const wait = skip ? 0 : Math.max(0, SPLASH_MIN_MS - (performance.now() - splashT0));
+  setTimeout(() => el('loading')!.classList.add('done'), wait);
 }
 
 boot().catch((e) => {
-  el('loading')!.textContent = 'Não foi possível iniciar o 3D neste navegador: ' + e.message;
+  el('loading')!.classList.add('error');
+  el('loadingMsg')!.textContent = 'Não foi possível iniciar o 3D neste navegador: ' + e.message;
   console.error(e);
 });
