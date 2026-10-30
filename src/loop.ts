@@ -27,17 +27,24 @@ export function startLoop(ctx: AfterDrive) {
   function resize() {
     const w = canvas.clientWidth,
       h = canvas.clientHeight;
+    if (!w || !h) return; // ainda sem layout: aspect = NaN deixaria a câmera inválida e a tela em branco
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     camera.fov = w < h ? 78 : 62;
     camera.updateProjectionMatrix();
   }
-  window.addEventListener('resize', resize);
+  // ResizeObserver cobre o 'resize' da janela e também o primeiro layout do canvas, que pode vir depois da carga
+  new ResizeObserver(resize).observe(canvas);
   resize();
 
   function frame(now) {
-    const dt = time.fixed ? 0 : Math.min(0.1, (now - prev) / 1000);
-    frameMs += (Math.min(100, now - prev) - frameMs) * 0.05; // média móvel do tempo de quadro
+    // O próximo quadro é pedido antes de tudo: uma exceção num quadro não pode matar o laço (tela parada, só o HUD).
+    requestAnimationFrame(frame);
+    // O 'now' do rAF é o início do quadro e pode ser anterior ao performance.now() da partida (primeiro quadro):
+    // sem o piso em 0, o dt negativo fazia o relógio da cena andar para trás.
+    const ms = Math.max(0, now - prev);
+    const dt = time.fixed ? 0 : Math.min(0.1, ms / 1000);
+    frameMs += (Math.min(100, ms) - frameMs) * 0.05; // média móvel do tempo de quadro
     prev = now;
     time.clock += dt;
     const t = time.clock;
@@ -84,7 +91,6 @@ export function startLoop(ctx: AfterDrive) {
       lastShadow = now;
     }
     renderer.render(scene, camera);
-    requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
   return ctx;
